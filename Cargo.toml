@@ -7,6 +7,6 @@ edition = "2021"
 
 [dependencies]
 eyre = "0.6.8"
-ocular = "1.0.0-alpha-2.0.2"
+ocular = { path = "../ocular", features = ["tx"] }
 serde = { version = "1.0.144", features = ["derive"] }
 toml = "0.5.9"

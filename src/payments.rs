@@ -16,8 +16,8 @@ pub struct Payment {
 
 #[derive(Debug, Deserialize, PartialEq, Serialize)]
 pub struct PaymentsToml {
-    pub sender_key_name: String,
-    pub grantee_key_name: Option<String>,
+    pub sender_key: String,
+    pub grantee_key: Option<String>,
     pub payments: Vec<Payment>,
 }
 
@@ -30,14 +30,14 @@ pub fn read_payments_toml(path: &str) -> Result<PaymentsToml> {
 /// Serializes payments into a toml at the specified path
 pub fn write_payments_toml(
     path: &str,
-    sender_key_name: &str,
-    grantee_key_name: Option<&str>,
+    sender_key_path: &str,
+    grantee_key_path: Option<&str>,
     payments: Vec<Payment>,
 ) -> Result<()> {
-    let grantee_key_name = grantee_key_name.map(|v| v.to_string());
+    let grantee_key_path = grantee_key_path.map(|v| v.to_string());
     let toml_obj = PaymentsToml {
-        sender_key_name: sender_key_name.to_string(),
-        grantee_key_name,
+        sender_key: sender_key_path.to_string(),
+        grantee_key: grantee_key_path,
         payments,
     };
     let toml_string = toml::to_string(&toml_obj)?;
@@ -46,7 +46,7 @@ pub fn write_payments_toml(
 
 #[cfg(test)]
 mod tests {
-    use std::{fs::Permissions, path::Path, os::unix::prelude::PermissionsExt};
+    use std::{fs::Permissions, os::unix::prelude::PermissionsExt, path::Path};
 
     use super::*;
 
@@ -77,8 +77,11 @@ mod tests {
             + "/payments_toml_test";
         fs::create_dir_all(&path_string).expect("failed to create path");
         #[cfg(unix)]
-        fs::set_permissions(&path_string, Permissions::from_mode(0o700)).expect("failed to set file permissions");
-        let path = Path::new(&path_string).canonicalize().expect("failed to canonicalize path");
+        fs::set_permissions(&path_string, Permissions::from_mode(0o700))
+            .expect("failed to set file permissions");
+        let path = Path::new(&path_string)
+            .canonicalize()
+            .expect("failed to canonicalize path");
         let st = path.metadata().expect("failed to get file metadata");
 
         assert!(st.is_dir());
@@ -86,11 +89,11 @@ mod tests {
         #[cfg(unix)]
         assert!(st.permissions().mode() & 0o777 == 0o700);
 
-        let sender_key = "sender_key".to_string();
-        let grantee_key = Some("grantee_key");
+        let sender_key = "~/.keys/sender_key".to_string();
+        let grantee_key = Some("~/.keys/grantee_key");
         let expected_result = PaymentsToml {
-            sender_key_name: sender_key.clone(),
-            grantee_key_name: grantee_key.map(|v| v.to_string()),
+            sender_key: sender_key.clone(),
+            grantee_key: grantee_key.map(|v| v.to_string()),
             payments: payments.clone(),
         };
 
