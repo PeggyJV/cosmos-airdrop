@@ -277,8 +277,15 @@ name = "cosmos-airdrop"
 version = "0.1.0"
 dependencies = [
  "eyre",
+ "futures",
+ "k256",
  "ocular",
+ "pkcs8",
+ "prost",
+ "prost-types",
+ "rand",
  "serde",
+ "tokio",
  "toml",
 ]
 
@@ -468,6 +475,7 @@ dependencies = [
  "ff",
  "generic-array",
  "group",
+ "pem-rfc7468",
  "pkcs8",
  "rand_core 0.6.3",
  "sec1",

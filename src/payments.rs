@@ -16,8 +16,7 @@ pub struct Payment {
 
 #[derive(Debug, Deserialize, PartialEq, Serialize)]
 pub struct PaymentsToml {
-    pub sender_key: String,
-    pub grantee_key: Option<String>,
+    pub signing_key: String,
     pub payments: Vec<Payment>,
 }
 
@@ -31,13 +30,10 @@ pub fn read_payments_toml(path: &str) -> Result<PaymentsToml> {
 pub fn write_payments_toml(
     path: &str,
     sender_key_path: &str,
-    grantee_key_path: Option<&str>,
     payments: Vec<Payment>,
 ) -> Result<()> {
-    let grantee_key_path = grantee_key_path.map(|v| v.to_string());
     let toml_obj = PaymentsToml {
-        sender_key: sender_key_path.to_string(),
-        grantee_key: grantee_key_path,
+        signing_key: sender_key_path.to_string(),
         payments,
     };
     let toml_string = toml::to_string(&toml_obj)?;
@@ -90,10 +86,8 @@ mod tests {
         assert!(st.permissions().mode() & 0o777 == 0o700);
 
         let sender_key = "~/.keys/sender_key".to_string();
-        let grantee_key = Some("~/.keys/grantee_key");
         let expected_result = PaymentsToml {
-            sender_key: sender_key.clone(),
-            grantee_key: grantee_key.map(|v| v.to_string()),
+            signing_key: sender_key.clone(),
             payments: payments.clone(),
         };
 
@@ -102,7 +96,6 @@ mod tests {
         write_payments_toml(
             &file_path.clone(),
             &sender_key,
-            grantee_key,
             payments.clone(),
         )
         .expect("failed to write payments toml");

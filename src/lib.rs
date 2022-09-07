@@ -81,7 +81,7 @@ pub async fn execute_airdrop(
     let mut mclient = MsgClient::new(rpc_endpoint)?;
     let mut tx = UnsignedTx::new();
     tx.add_msg(msg);
-    tx.sign(sender, fee_info, chain_context.to_owned(), &mut qclient)
+    tx.sign(sender, fee_info, &chain_context, &mut qclient)
         .await?
         .broadcast_commit(&mut mclient)
         .await
@@ -89,13 +89,13 @@ pub async fn execute_airdrop(
 
 pub async fn execute_airdrop_from_toml(
     path: &str,
-    sender: &AccountInfo,
     fee_info: FeeInfo,
     chain_context: &Context,
     rpc_endpoint: &str,
     grpc_endpoint: &str,
 ) -> Result<Response> {
     let payments_toml = read_payments_toml(path)?;
+    let sender = AccountInfo::from_pem(&payments_toml.signing_key)?;
     execute_airdrop(
         &sender,
         payments_toml.payments,
@@ -116,10 +116,9 @@ pub async fn execute_delegated_airdrop(
     rpc_endpoint: &str,
     grpc_endpoint: &str,
 ) -> Result<Response> {
-    let address = &grantee.address(&chain_context.prefix)?;
-    let inner_msg = multi_send_from_payments(address, payments)?;
+    let inner_msg = multi_send_from_payments(granter, payments)?;
     let msg = Authz::Exec {
-        grantee: address,
+        grantee: &grantee.address(&chain_context.prefix)?,
         msgs: vec![inner_msg],
     }
     .into_any()?;
@@ -127,7 +126,7 @@ pub async fn execute_delegated_airdrop(
     let mut mclient = MsgClient::new(rpc_endpoint)?;
     let mut tx = UnsignedTx::new();
     tx.add_msg(msg);
-    tx.sign(grantee, fee_info, chain_context.to_owned(), &mut qclient)
+    tx.sign(grantee, fee_info, &chain_context, &mut qclient)
         .await?
         .broadcast_commit(&mut mclient)
         .await
@@ -136,16 +135,16 @@ pub async fn execute_delegated_airdrop(
 pub async fn execute_delegated_airdrop_from_toml(
     path: &str,
     granter: &str,
-    grantee: &AccountInfo,
     fee_info: FeeInfo,
     chain_context: &Context,
     rpc_endpoint: &str,
     grpc_endpoint: &str,
 ) -> Result<Response> {
     let payments_toml = read_payments_toml(path)?;
+    let grantee = AccountInfo::from_pem(&payments_toml.signing_key)?;
     execute_delegated_airdrop(
         granter,
-        grantee,
+        &grantee,
         payments_toml.payments,
         fee_info,
         chain_context,

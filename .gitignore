@@ -1,2 +1,4 @@
 /target
 /payments_toml_testpayments.toml
+*_test*
+*.pem
